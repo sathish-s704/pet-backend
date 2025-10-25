@@ -21,7 +21,12 @@ dotenv.config();
 const app = express();
 
 app.use(bodyParser.json());
-app.use(cors({ origin: '*', credentials: true }));
+app.use(cors({
+  origin: ["https://pet-frontend-tau.vercel.app"],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  credentials: true
+}));
+
 app.use(cookieParser());
 
 // Routes
