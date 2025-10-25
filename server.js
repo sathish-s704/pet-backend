@@ -1,6 +1,5 @@
 import express from 'express';
 import mongoose from 'mongoose';
-import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -20,23 +19,30 @@ import reviewRoutes from './routes/reviewRoutes.js';
 dotenv.config();
 const app = express();
 
-// ✅ Enable CORS for both local + production frontend
-app.use(cors({
-  origin: [
-    "http://localhost:5173",           // local dev
-    "https://pet-frontend-tau.vercel.app"  // your deployed frontend
-  ],
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  credentials: true
-}));
-
-app.use(bodyParser.json());
+// ===== MIDDLEWARES =====
+app.use(express.json());
 app.use(cookieParser());
 
-// ✅ Optional but recommended: handle preflight requests globally
-app.options('*', cors());
+// CORS setup
+const allowedOrigins = [
+  'http://localhost:5173', // local frontend
+  'https://pet-frontend-tau.vercel.app' // hosted frontend
+];
+app.use(cors({
+  origin: function(origin, callback) {
+    // allow requests with no origin like Postman
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = `CORS policy: Origin ${origin} not allowed`;
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET','POST','PUT','DELETE','PATCH','OPTIONS'],
+}));
 
-// Routes
+// ===== ROUTES =====
 app.use("/api/auth", authRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/cart", cartRoutes);
@@ -47,20 +53,20 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/reviews", reviewRoutes);
 
-// Static files
+// ===== STATIC FILES =====
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Root route
+// ===== TEST ROUTE =====
 app.get('/', (req, res) => {
-  res.send('✅ Pet Accessories Backend is running with CORS fixed!');
+  res.send('✅ Pet Accessories Backend is running!');
 });
 
-// MongoDB connection
+// ===== MONGODB CONNECTION =====
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB Connected"))
-  .catch(err => console.error("❌ MongoDB Error:", err));
+  .then(() => console.log('✅ MongoDB Connected'))
+  .catch(err => console.error('❌ MongoDB Error:', err));
 
-// Export app for Vercel
+// ===== EXPORT FOR VERCEL =====
 export default app;
