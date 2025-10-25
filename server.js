@@ -20,14 +20,21 @@ import reviewRoutes from './routes/reviewRoutes.js';
 dotenv.config();
 const app = express();
 
-app.use(bodyParser.json());
+// ✅ Enable CORS for both local + production frontend
 app.use(cors({
-  origin: ["https://pet-frontend-tau.vercel.app"],
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  origin: [
+    "http://localhost:5173",           // local dev
+    "https://pet-frontend-tau.vercel.app"  // your deployed frontend
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   credentials: true
 }));
 
+app.use(bodyParser.json());
 app.use(cookieParser());
+
+// ✅ Optional but recommended: handle preflight requests globally
+app.options('*', cors());
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -40,17 +47,17 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/reviews", reviewRoutes);
 
-// Static files for image uploads
+// Static files
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Root route for testing
+// Root route
 app.get('/', (req, res) => {
-  res.send('✅ Pet Accessories Backend is running!');
+  res.send('✅ Pet Accessories Backend is running with CORS fixed!');
 });
 
-// Connect to MongoDB
+// MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB Connected"))
   .catch(err => console.error("❌ MongoDB Error:", err));
